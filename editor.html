@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOVAFAM | Studio - Crea tu Diseño</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'display': ['Playfair Display', 'serif'],
+                        'sans': ['Inter', 'sans-serif'],
+                        'mono': ['Space Grotesk', 'monospace'],
+                    },
+                    colors: {
+                        'luxury': {
+                            900: '#0a0a0a',
+                            800: '#141414',
+                            700: '#1c1c1c',
+                            600: '#2a2a2a',
+                            500: '#3a3a3a',
+                            gold: '#c9a96e',
+                            'gold-light': '#e8d5a3',
+                            cream: '#f5f0e8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #0a0a0a;
+            color: #f5f0e8;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .gold-shimmer {
+            background: linear-gradient(90deg, #c9a96e 0%, #e8d5a3 25%, #c9a96e 50%, #e8d5a3 75%, #c9a96e 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s linear infinite;
+        }
+        @keyframes shimmer {
+            to { background-position: 200% center; }
+        }
+
+        /* Canvas Container */
+        .canvas-container {
+            position: relative;
+            background: linear-gradient(135deg, #1c1c1c 0%, #2a2a2a 100%);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .canvas-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(201, 169, 110, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(201, 169, 110, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+            pointer-events: none;
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed rgba(201, 169, 110, 0.3);
+            transition: all 0.3s ease;
+        }
+        .upload-zone:hover, .upload-zone.drag-over {
+            border-color: #c9a96e;
+            background: rgba(201, 169, 110, 0.05);
+        }
+
+        /* Controls */
+        .control-btn {
+            transition: all 0.2s ease;
+        }
+        .control-btn:hover {
+            background: rgba(201, 169, 110, 0.2);
+            transform: scale(1.05);
+        }
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Range Slider */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: #3a3a3a;
+            height: 6px;
+            border-radius: 3px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #c9a96e;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(201, 169, 110, 0.5);
+        }
+
+        /* Product Thumbnail */
+        .product-thumb {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .product-thumb:hover {
+            border-color: rgba(201, 169, 110, 0.5);
+        }
+        .product-thumb.active {
+            border-color: #c9a96e;
+            box-shadow: 0 0 20px rgba(201, 169, 110, 0.2);
+        }
+
+        /* Price Tag */
+        .price-tag {
+            background: linear-gradient(135deg, #c9a96e 0%, #a88b4a 100%);
+            box-shadow: 0 4px 15px rgba(201, 169, 110, 0.3);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.active .modal-content {
+            transform: translateY(0) scale(1);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(201, 169, 110, 0.2);
+            border-top-color: #c9a96e;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        /* Color Picker Custom */
+        .color-option {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+        .color-option.active {
+            border-color: #c9a96e;
+            box-shadow: 0 0 0 2px #0a0a0a, 0 0 0 4px #c9a96e;
+        }
+
+        /* Text Tool */
+        .text-input {
+            background: transparent;
+            border: 2px dashed rgba(201, 169, 110, 0.4);
+            color: #c9a96e;
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            padding: 10px 20px;
+            text-align: center;
+            min-width: 200px;
+        }
+        .text-input:focus {
+            outline: none;
+            border-style: solid;
+            border-color: #c9a96e;
+        }
+
+        /* AI Prompt */
+        .ai-prompt {
+            background: linear-gradient(135deg, rgba(201, 169, 110, 0.1) 0%, rgba(168, 139, 74, 0.05) 100%);
+            border: 1px solid rgba(201, 169, 110, 0.3);
+        }
+        .ai-prompt:focus-within {
+            border-color: #c9a96e;
+            box-shadow: 0 0 20px rgba(201, 169, 110, 0.1);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c9a96e; }
+
+        /* Fade In */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast fixed top-6 right-6 z-50 bg-luxury-800 border border-luxury-gold/30 rounded-xl px-6 py-4 flex items-center gap-3 shadow-2xl">
+        <i data-lucide="check-circle" class="w-5 h-5 text-luxury-gold"></i>
+        <span id="toast-message" class="text-luxury-cream text-sm">Acción completada</span>
+    </div>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 w-full z-40 bg-luxury-900/90 backdrop-blur-xl border-b border-luxury-700/30">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <a href="index.html" class="flex items-center gap-3 group">
+                    <div class="w-8 h-8 border border-luxury-gold/50 rounded-full flex items-center justify-center">
+                        <span class="font-display text-luxury-gold text-sm">J</span>
+                    </div>
+                    <span class="font-display text-xl text-luxury-cream tracking-wide">JOVAFAM <span class="text-luxury-gold text-sm font-mono uppercase tracking-widest ml-2">Studio</span></span>
+                </a>
+                
+                <div class="flex items-center gap-4">
+                    <div class="hidden md:flex items-center gap-2 px-4 py-2 bg-luxury-800/50 rounded-lg border border-luxury-700/50">
+                        <i data-lucide="ruler" class="w-4 h-4 text-luxury-gold"></i>
+                        <span id="size-display" class="font-mono text-xs text-luxury-gold">20 x 20 cm</span>
+                    </div>
+                    <div class="price-tag px-4 py-2 rounded-lg">
+                        <span class="font-mono text-sm font-bold text-luxury-900">€<span id="price-display">12.50</span></span>
+                    </div>
+                    <button onclick="openOrderModal()" class="btn-luxury px-6 py-2 bg-luxury-cream text-luxury-900 font-mono text-xs uppercase tracking-widest font-semibold rounded-lg hover:bg-luxury-gold transition-colors">
+                        Pedir Ahora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-12 min-h-screen">
+        <div class="max-w-7xl mx-auto px-6 lg:px-8">
+            
+            <!-- Title -->
+            <div class="text-center mb-8 fade-in">
+                <h1 class="font-display text-4xl md:text-5xl text-luxury-cream mb-2">
+                    Crea tu <span class="italic gold-shimmer">Diseño</span>
+                </h1>
+                <p class="text-luxury-500">Sube tu imagen, posiciónala y calcula el precio en tiempo real</p>
+            </div>
+
+            <div class="grid lg:grid-cols-12 gap-6">
+                
+                <!-- Left Sidebar - Tools -->
+                <div class="lg:col-span-3 space-y-4 fade-in">
+                    
+                    <!-- Upload Section -->
+                    <div class="bg-luxury-800/50 border border-luxury-700/50 rounded-2xl p-6">
+                        <h3 class="font-mono text-xs uppercase tracking-widest text-luxury-gold mb-4">Subir Diseño</h3>
+                        
+                        <div id="upload-zone" class="upload-zone rounded-xl p-8 text-center cursor-pointer">
+                            <input type="file" id="file-input" accept="image/*" class="hidden">
+                            <i data-lucide="upload-cloud" class="w-10 h-10 text-luxury-gold/50 mx-auto mb-3"></i>
+                            <p class="text-luxury-500 text-sm mb-1">Arrastra tu imagen aquí</p>
+                            <p class="text-luxury-600 text-xs">PNG, JPG, SVG hasta 10MB</p>
+                        </div>
+
+                        <!-- AI Generate Button -->
+                        <button onclick="openAIModal()" class="mt-4 w-full py-3 ai-prompt rounded-xl flex items-center justify-center gap-2 hover:bg-luxury-gold/10 transition-colors">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-luxury-gold"></i>
+                            <span class="font-mono text-xs text-luxury-gold uppercase tracking-wider">Generar con AI</span>
+                        </button>
+                    </div>
+
+                    <!-- Tools Section (Hidden until image loaded) -->
+                    <div id="tools-panel" class="bg-luxury-800/50 border border-luxury-700/50 rounded-2xl p-6 hidden">
+                        <h3 class="font-mono text-xs uppercase tracking-widest text-luxury-gold mb-4">Herramientas</h3>
+                        
+                        <div class="space-y-4">
+                            <!-- Scale -->
+                            <div>
+                                <label class="flex justify-between text-xs text-luxury-500 mb-2">
+                                    <span>Tamaño</span>
+                                    <span id="scale-value">100%</span>
+                                </label>
+                                <input type="range" id="scale-slider" min="10" max="200" value="100" class="w-full">
+                            </div>
+
+                            <!-- Rotation -->
+                            <div>
+                                <label class="flex justify-between text-xs text-luxury-500 mb-2">
+                                    <span>Rotación</span>
+                                    <span id="rotate-value">0°</span>
+                                </label>
+                                <input type="range" id="rotate-slider" min="-180" max="180" value="0" class="w-full">
+                            </div>
+
+                            <!-- Opacity -->
+                            <div>
+                                <label class="flex justify-between text-xs text-luxury-500 mb-2">
+                                    <span>Opacidad</span>
+                                    <span id="opacity-value">100%</span>
+                                </label>
+                                <input type="range" id="opacity-slider" min="10" max="100" value="100" class="w-full">
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="grid grid-cols-2 gap-2 pt-2">
+                                <button onclick="flipHorizontal()" class="control-btn py-2 bg-luxury-700/50 rounded-lg flex items-center justify-center gap-2">
+                                    <i data-lucide="flip-horizontal" class="w-4 h-4 text-luxury-400"></i>
+                                </button>
+                                <button onclick="flipVertical()" class="control-btn py-2 bg-luxury-700/50 rounded-lg flex items-center justify-center gap-2">
+                                    <i data-lucide="flip-vertical" class="w-4 h-4 text-luxury-400"></i>
+                                </button>
+                                <button onclick="bringToFront()" class="control-btn py-2 bg-luxury-700/50 rounded-lg flex items-center justify-center gap-2">
+                                    <i data-lucide="arrow-up-from-line" class="w-4 h-4 text-luxury-400"></i>
+                                </button>
+                                <button onclick="deleteDesign()" class="control-btn py-2 bg-luxury-700/50 rounded-lg flex items-center justify-center gap-2">
+                                    <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+                                </button>
+                            </div>
+
+                            <button onclick="resetDesign()" class="w-full py-2 text-xs text-luxury-500 hover:text-luxury-gold transition-colors font-mono uppercase tracking-wider">
+                                Restablecer
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Add Text -->
+                    <div class="bg-luxury-800/50 border border-luxury-700/50 rounded-2xl p-6">
+                        <h3 class="font-mono text-xs uppercase tracking-widest text-luxury-gold mb-4">Añadir Texto</h3>
+                        <div class="space-y-3">
+                            <input type="text" id="text-input" placeholder="Tu texto aquí..." 
+                                   class="w-full bg-luxury-900 border border-luxury-700 rounded-lg px-4 py-3 text-luxury-cream text-sm focus:border-luxury-gold focus:outline-none">
+                            <div class="flex gap-2">
+                                <input type="color" id="text-color" value="#c9a96e" class="w-10 h-10 rounded-lg bg-transparent border border-luxury-700 cursor-pointer">
+                                <select id="text-font" class="flex-1 bg-luxury-900 border border-luxury-700 rounded-lg px-3 text-luxury-cream text-sm focus:border-luxury-gold focus:outline-none">
+                                    <option value="Playfair Display">Elegante</option>
+                                    <option value="Inter">Moderno</option>
+                                    <option value="Space Grotesk">Técnico</option>
+                                    <option value="Arial">Simple</option>
+                                </select>
+                            </div>
+                            <button onclick="addText()" class="w-full py-3 bg-luxury-gold/20 text-luxury-gold rounded-lg font-mono text-xs uppercase tracking-wider hover:bg-luxury-gold/30 transition-colors">
+                                Añadir Texto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Center - Canvas -->
+                <div class="lg:col-span-6 fade-in">
+                    <div class="canvas-container aspect-[4/5] relative flex items-center justify-center">
+                        <canvas id="design-canvas" class="absolute inset-0 w-full h-full"></canvas>
+                        
+                        <!-- Empty State -->
+                        <div id="empty-state" class="text-center">
+                            <div class="w-20 h-20 rounded-full bg-luxury-gold/10 flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="image-plus" class="w-10 h-10 text-luxury-gold/30"></i>
+                            </div>
+                            <p class="text-luxury-500 text-lg mb-2">Sin diseño aún</p>
+                            <p class="text-luxury-600 text-sm">Sube una imagen o genera una con AI</p>
+                        </div>
+
+                        <!-- Grid Overlay -->
+                        <div id="grid-overlay" class="absolute inset-0 pointer-events-none opacity-0 transition-opacity">
+                            <div class="absolute inset-0" style="background-image: linear-gradient(rgba(201,169,110,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(201,169,110,0.1) 1px, transparent 1px); background-size: 50px 50px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Controls -->
+                    <div class="flex items-center justify-between mt-4">
+                        <div class="flex items-center gap-2">
+                            <button onclick="toggleGrid()" class="control-btn p-2 rounded-lg bg-luxury-800 border border-luxury-700/50" title="Mostrar/Ocultar grid">
+                                <i data-lucide="grid-3x3" class="w-4 h-4 text-luxury-400"></i>
+                            </button>
+                            <button onclick="zoomIn()" class="control-btn p-2 rounded-lg bg-luxury-800 border border-luxury-700/50" title="Zoom in">
+                                <i data-lucide="zoom-in" class="w-4 h-4 text-luxury-400"></i>
+                            </button>
+                            <button onclick="zoomOut()" class="control-btn p-2 rounded-lg bg-luxury-800 border border-luxury-700/50" title="Zoom out">
+                                <i data-lucide="zoom-out" class="w-4 h-4 text-luxury-400"></i>
+                            </button>
+                            <button onclick="resetZoom()" class="control-btn p-2 rounded-lg bg-luxury-800 border border-luxury-700/50" title="Reset zoom">
+                                <i data-lucide="maximize" class="w-4 h-4 text-luxury-400"></i>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="downloadPreview()" class="control-btn px-4 py-2 rounded-lg bg-luxury-800 border border-luxury-700/50 flex items-center gap-2 text-sm text-luxury-400">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span class="hidden sm:inline">Descargar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar - Product & Colors -->
+                <div class="lg:col-span-3 space-y-4 fade-in">
+                    
+                    <!-- Product Selection -->
+                    <div class="bg-luxury-800/50 border border-luxury-700/50 rounded-2xl p-6">
+                        <h3 class="font-mono text-xs uppercase tracking-widest text-luxury-gold mb-4">Prenda</h3>
+                        
+                        <div class="space-y-3">
+                            <div onclick="selectProduct('tshirt-black')" class="product-thumb active flex items-center gap-3 p-3 rounded-xl bg-luxury-900/50">
+                                <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=100&q=80" alt="Black T-shirt" class="w-12 h-12 rounded-lg object-cover">
+                                <div>
+                                    <p class="text-sm text-luxury-cream">Camiseta Negra</p>
+                                    <p class="text-xs text-luxury-500">€24.90 base</p>
+                                </div>
+                            </div>
+                            
+                            <div onclick="selectProduct('tshirt-white')" class="product-thumb flex items-center gap-3 p-3 rounded-xl bg-luxury-900/50">
+                                <img src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=100&q=80" alt="White T-shirt" class="w-12 h-12 rounded-lg object-cover">
+                                <div>
+                                    <p class="text-sm text-luxury-cream">Camiseta Blanca</p>
+                                    <p class="text-xs text-luxury-500">€24.90 base</p>
+                                </div>
+                            </div>
+                            
+                            <div onclick="selectProduct('hoodie-black')" class="product-thumb flex items-center gap-3 p-3 rounded-xl bg-luxury-900/50">
+                                <img src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=100&q=80" alt="Hoodie" class="w-12 h-12 rounded-lg object-cover">
+                                <div>
+                                    <p class="text-sm text-luxury-cream">Hoodie Negro</p>
+                                    <p class="text-xs text-luxury-500">€49.90 base</p>
+                                </div>
+                            </div>
+                            
+                            <div onclick="selectProduct('cap')" class="product-thumb flex items-center gap-3 p-3 rounded-xl bg-luxury-900/50">
+                                <img src="https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=100&q=80" alt="Cap" class="w-12 h-12 rounded-lg object-cover">
+                                <div>
+                                    <p class="text-sm text-luxury-cream">Gorra Snapback</p>
+                                    <p class="text-xs text-luxury-500">€19.90 base</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Print Position -->
+                    <div class="bg-luxury-800/50 border border-luxury-700/50 rounded-2xl p-6">
+                        <h3 class="font-mono text-xs uppercase tracking-widest text-luxury-gold mb-4">Posición</h3>
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setPosition('center-chest')" class="position-btn active py-3 px-4 rounded-xl bg-luxury-gold/20 text-luxury-gold text-xs font-mono uppercase text-center border border-luxury-gold/30">
+                                Centro Pecho
+                            </button>
+                            <button onclick="setPosition('left-chest')" class="position-btn py-3 px-4 rounded-xl bg-luxury-900 text-luxury-500 text-xs font-mono uppercase text-center border border-luxury-700/50 hover:border-luxury-gold/30">
+                                Pecho Izq.
+                            </button>
+                            <button onclick="setPosition('full-back')" class="position-btn py-3 px-4 rounded-xl bg-luxury-900 text-luxury-500 text-xs font-mono uppercase text-center border border-luxury-700/50 hover:border-luxury-gold/30">
+                                Espalda
+                            </button>
+                            <button onclick="setPosition('sleeve')" class="position-btn py-3 px-4 rounded-xl bg-luxury-900 text-luxury-500 text-xs font-mono uppercase text-center border border-luxury-700/50 hover:border-luxury-gold/30">
+                                Manga
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Price Breakdown -->
+                    <div class="bg-luxury-800/50 border border-luxury-700/50 rounded-2xl p-6">
+                        <h3 class="font-mono text-xs uppercase tracking-widest text-luxury-gold mb-4">Desglose</h3>
+                        
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between text-luxury-500">
+                                <span>Prenda base</span>
+                                <span id="base-price">€24.90</span>
+                            </div>
+                            <div class="flex justify-between text-luxury-500">
+                                <span>Transfer DTF</span>
+                                <span id="transfer-price">€12.50</span>
+                            </div>
+                            <div class="flex justify-between text-luxury-500">
+                                <span>Personalización</span>
+                                <span>€5.00</span>
+                            </div>
+                            <div class="border-t border-luxury-700/50 pt-2 mt-2">
+                                <div class="flex justify-between text-luxury-cream font-semibold">
+                                    <span>Total estimado</span>
+                                    <span class="text-luxury-gold" id="total-price">€42.40</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p class="text-xs text-luxury-600 mt-3">*Precio final puede variar según cantidad</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- AI Generate Modal -->
+    <div id="ai-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="modal-content bg-luxury-800 border border-luxury-700/50 rounded-2xl p-8 max-w-lg w-full mx-4">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="font-display text-2xl text-luxury-cream">Generar con AI</h2>
+                <button onclick="closeAIModal()" class="text-luxury-500 hover:text-luxury-cream">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <p class="text-luxury-500 text-sm mb-4">Describe el diseño que quieres crear. La AI generará una imagen única para tu prenda.</p>
+            
+            <div class="ai-prompt rounded-xl p-4 mb-4">
+                <textarea id="ai-prompt-text" rows="3" placeholder="Ej: Un tigre geométrico dorado sobre fondo negro, estilo minimalista, líneas finas..." 
+                          class="w-full bg-transparent text-luxury-cream text-sm resize-none focus:outline-none placeholder:text-luxury-600"></textarea>
+            </div>
+            
+            <div class="flex gap-2 mb-6">
+                <span class="text-xs text-luxury-600 bg-luxury-900 px-3 py-1 rounded-full cursor-pointer hover:text-luxury-gold transition-colors" onclick="setPrompt('Logo minimalista con iniciales JF, dorado y negro, elegante')">Logo JF</span>
+                <span class="text-xs text-luxury-600 bg-luxury-900 px-3 py-1 rounded-full cursor-pointer hover:text-luxury-gold transition-colors" onclick="setPrompt('Patrón de hojas tropicales, colores vibrantes, estilo moderno')">Tropical</span>
+                <span class="text-xs text-luxury-600 bg-luxury-900 px-3 py-1 rounded-full cursor-pointer hover:text-luxury-gold transition-colors" onclick="setPrompt('Cráneo con rosas, estilo tattoo, blanco y negro con detalles dorados')">Tattoo</span>
+            </div>
+            
+            <button onclick="generateAI()" id="ai-generate-btn" class="w-full py-4 bg-luxury-gold text-luxury-900 font-mono text-sm uppercase tracking-widest font-semibold rounded-xl hover:bg-luxury-gold-light transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>Generar Diseño</span>
+            </button>
+            
+            <div id="ai-loading" class="hidden mt-4 text-center">
+                <div class="spinner mx-auto mb-3"></div>
+                <p class="text-luxury-500 text-sm">Creando tu diseño único...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Modal -->
+    <div id="order-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="modal-content bg-luxury-800 border border-luxury-700/50 rounded-2xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="font-display text-2xl text-luxury-cream">Confirmar Pedido</h2>
+                <button onclick="closeOrderModal()" class="text-luxury-500 hover:text-luxury-cream">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 mb-6">
+                <div class="flex items-center gap-4 p-4 bg-luxury-900/50 rounded-xl">
+                    <div id="preview-thumbnail" class="w-16 h-16 rounded-lg bg-luxury-700 flex items-center justify-center">
+                        <i data-lucide="image" class="w-6 h-6 text-luxury-500"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm text-luxury-cream" id="order-product">Camiseta Negra</p>
+                        <p class="text-xs text-luxury-500" id="order-size">20 x 20 cm</p>
+                    </div>
+                    <div class="ml-auto text-right">
+                        <p class="text-sm text-luxury-gold font-semibold" id="order-price">€42.40</p>
+                    </div>
+                </div>
+            </div>
+            
+            <form id="order-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs text-luxury-500 uppercase tracking-wider mb-2">Nombre</label>
+                    <input type="text" required class="w-full bg-luxury-900 border border-luxury-700 rounded-lg px-4 py-3 text-luxury-cream focus:border-luxury-gold focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-luxury-500 uppercase tracking-wider mb-2">Email</label>
+                    <input type="email" required class="w-full bg-luxury-900 border border-luxury-700 rounded-lg px-4 py-3 text-luxury-cream focus:border-luxury-gold focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-luxury-500 uppercase tracking-wider mb-2">Teléfono / WhatsApp</label>
+                    <input type="tel" required class="w-full bg-luxury-900 border border-luxury-700 rounded-lg px-4 py-3 text-luxury-cream focus:border-luxury-gold focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-luxury-500 uppercase tracking-wider mb-2">Cantidad</label>
+                    <select class="w-full bg-luxury-900 border border-luxury-700 rounded-lg px-4 py-3 text-luxury-cream focus:border-luxury-gold focus:outline-none">
+                        <option>1 unidad</option>
+                        <option>5 unidades (-10%)</option>
+                        <option>10 unidades (-20%)</option>
+                        <option>25 unidades (-30%)</option>
+                        <option>50+ unidades (contactar)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-luxury-500 uppercase tracking-wider mb-2">Notas adicionales</label>
+                    <textarea rows="2" class="w-full bg-luxury-900 border border-luxury-700 rounded-lg px-4 py-3 text-luxury-cream focus:border-luxury-gold focus:outline-none resize-none"></textarea>
+                </div>
+                
+                <button type="submit" class="w-full py-4 bg-luxury-gold text-luxury-900 font-mono text-sm uppercase tracking-widest font-semibold rounded-xl hover:bg-luxury-gold-light transition-colors">
+                    Enviar Pedido por WhatsApp
+                </button>
+                
+                <p class="text-xs text-luxury-600 text-center">Te contactaremos en menos de 24h para confirmar</p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // ===== CANVAS SETUP =====
+        const canvas = document.getElementById('design-canvas');
+        const ctx = canvas.getContext('2d');
+        let canvasWidth, canvasHeight;
+        
+        // Design state
+        let designImage = null;
+        let textElements = [];
+        let selectedElement = null;
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        let elementStart = { x: 0, y: 0 };
+        
+        // Transform state
+        let designState = {
+            x: 0,
+            y: 0,
+            scale: 1,
+            rotation: 0,
+            opacity: 1,
+            flipH: false,
+            flipV: false
+        };
+
+        // Product state
+        let currentProduct = 'tshirt-black';
+        let productPrices = {
+            'tshirt-black': 24.90,
+            'tshirt-white': 24.90,
+            'hoodie-black': 49.90,
+            'cap': 19.90
+        };
+
+        // Zoom
+        let zoom = 1;
+
+        // Resize canvas
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvasWidth = container.clientWidth;
+            canvasHeight = container.clientHeight;
+            canvas.width = canvasWidth * window.devicePixelRatio;
+            canvas.height = canvasHeight * window.devicePixelRatio;
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            draw();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        
+        // ===== DRAWING =====
+        function draw() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Draw product mockup
+            drawProductMockup();
+            
+            // Draw design
+            if (designImage) {
+                ctx.save();
+                ctx.globalAlpha = designState.opacity;
+                ctx.translate(designState.x, designState.y);
+                ctx.rotate(designState.rotation * Math.PI / 180);
+                ctx.scale(designState.flipH ? -designState.scale : designState.scale, 
+                         designState.flipV ? -designState.scale : designState.scale);
+                
+                const w = designImage.width;
+                const h = designImage.height;
+                ctx.drawImage(designImage, -w/2, -h/2, w, h);
+                
+                // Selection border
+                if (selectedElement === 'image') {
+                    ctx.strokeStyle = '#c9a96e';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeRect(-w/2 - 5, -h/2 - 5, w + 10, h + 10);
+                    
+                    // Corner handles
+                    ctx.fillStyle = '#c9a96e';
+                    const handles = [
+                        [-w/2 - 8, -h/2 - 8], [w/2, -h/2 - 8],
+                        [-w/2 - 8, h/2], [w/2, h/2]
+                    ];
+                    handles.forEach(([hx, hy]) => {
+                        ctx.fillRect(hx, hy, 8, 8);
+                    });
+                }
+                
+                ctx.restore();
+            }
+            
+            // Draw text elements
+            textElements.forEach((text, index) => {
+                ctx.save();
+                ctx.globalAlpha = text.opacity;
+                ctx.translate(text.x, text.y);
+                ctx.rotate(text.rotation * Math.PI / 180);
+                ctx.font = `${text.size}px ${text.font}`;
+                ctx.fillStyle = text.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(text.content, 0, 0);
+                
+                if (selectedElement === `text-${index}`) {
+                    const metrics = ctx.measureText(text.content);
+                    ctx.strokeStyle = '#c9a96e';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 3]);
+                    ctx.strokeRect(-metrics.width/2 - 5, -text.size/2 - 5, 
+                                  metrics.width + 10, text.size + 10);
+                }
+                
+                ctx.restore();
+            });
+        }
+
+        function drawProductMockup() {
+            const centerX = canvasWidth / 2;
+            const centerY = canvasHeight / 2;
+            
+            ctx.save();
+            
+            // Draw shirt shape based on product
+            if (currentProduct.includes('tshirt')) {
+                // T-shirt shape
+                ctx.fillStyle = currentProduct.includes('black') ? '#1a1a1a' : '#f5f0e8';
+                ctx.beginPath();
+                // Neck
+                ctx.moveTo(centerX - 60, centerY - 120);
+                ctx.quadraticCurveTo(centerX, centerY - 100, centerX + 60, centerY - 120);
+                // Shoulders
+                ctx.lineTo(centerX + 140, centerY - 80);
+                ctx.lineTo(centerX + 130, centerY + 20);
+                // Sides
+                ctx.lineTo(centerX + 120, centerY + 180);
+                ctx.lineTo(centerX - 120, centerY + 180);
+                ctx.lineTo(centerX - 130, centerY + 20);
+                // Other shoulder
+                ctx.lineTo(centerX - 140, centerY - 80);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Subtle shading
+                const gradient = ctx.createLinearGradient(centerX - 100, centerY, centerX + 100, centerY);
+                gradient.addColorStop(0, 'rgba(0,0,0,0.1)');
+                gradient.addColorStop(0.5, 'rgba(0,0,0,0)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0.1)');
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+            } else if (currentProduct.includes('hoodie')) {
+                // Hoodie shape
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.moveTo(centerX - 70, centerY - 130);
+                ctx.quadraticCurveTo(centerX, centerY - 110, centerX + 70, centerY - 130);
+                ctx.lineTo(centerX + 150, centerY - 70);
+                ctx.lineTo(centerX + 140, centerY + 40);
+                ctx.lineTo(centerX + 130, centerY + 200);
+                ctx.lineTo(centerX - 130, centerY + 200);
+                ctx.lineTo(centerX - 140, centerY + 40);
+                ctx.lineTo(centerX - 150, centerY - 70);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Hood
+                ctx.fillStyle = '#151515';
+                ctx.beginPath();
+                ctx.moveTo(centerX - 50, centerY - 130);
+                ctx.quadraticCurveTo(centerX, centerY - 180, centerX + 50, centerY - 130);
+                ctx.lineTo(centerX + 60, centerY - 100);
+                ctx.quadraticCurveTo(centerX, centerY - 90, centerX - 60, centerY - 100);
+                ctx.closePath();
+                ctx.fill();
+                
+            } else if (currentProduct === 'cap') {
+                // Cap shape
+                ctx.fillStyle = '#1a1a1a';
+                // Dome
+                ctx.beginPath();
+                ctx.ellipse(centerX, centerY - 40, 100, 60, 0, Math.PI, 0);
+                ctx.fill();
+                // Front panel
+                ctx.fillRect(centerX - 100, centerY - 40, 200, 50);
+                // Brim
+                ctx.beginPath();
+                ctx.moveTo(centerX - 100, centerY + 10);
+                ctx.quadraticCurveTo(centerX, centerY + 50, centerX + 100, centerY + 10);
+                ctx.lineTo(centerX + 120, centerY + 30);
+                ctx.quadraticCurveTo(centerX, centerY + 70, centerX - 120, centerY + 30);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+
+        // ===== FILE UPLOAD =====
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                loadImage(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) loadImage(file);
+        });
+
+        function loadImage(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                designImage = new Image();
+                designImage.onload = () => {
+                    // Center and scale to fit
+                    const maxSize = Math.min(canvasWidth, canvasHeight) * 0.4;
+                    const scale = Math.min(maxSize / designImage.width, maxSize / designImage.height);
+                    designState.scale = scale;
+                    designState.x = canvasWidth / 2;
+                    designState.y = canvasHeight / 2;
+                    
+                    document.getElementById('empty-state').style.display = 'none';
+                    document.getElementById('tools-panel').classList.remove('hidden');
+                    selectedElement = 'image';
+                    updatePrice();
+                    draw();
+                    showToast('Imagen cargada correctamente');
+                };
+                designImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ===== CONTROLS =====
+        document.getElementById('scale-slider').addEventListener('input', (e) => {
+            const baseScale = Math.min(canvasWidth, canvasHeight) * 0.4 / Math.max(designImage?.width || 1, designImage?.height || 1);
+            designState.scale = baseScale * (e.target.value / 100);
+            document.getElementById('scale-value').textContent = e.target.value + '%';
+            updatePrice();
+            draw();
+        });
+
+        document.getElementById('rotate-slider').addEventListener('input', (e) => {
+            designState.rotation = parseInt(e.target.value);
+            document.getElementById('rotate-value').textContent = e.target.value + '°';
+            draw();
+        });
+
+        document.getElementById('opacity-slider').addEventListener('input', (e) => {
+            designState.opacity = e.target.value / 100;
+            document.getElementById('opacity-value').textContent = e.target.value + '%';
+            draw();
+        });
+
+        function flipHorizontal() {
+            designState.flipH = !designState.flipH;
+            draw();
+        }
+
+        function flipVertical() {
+            designState.flipV = !designState.flipV;
+            draw();
+        }
+
+        function bringToFront() {
+            // In canvas, last drawn is on top, so we just redraw
+            draw();
+            showToast('Elemento al frente');
+        }
+
+        function deleteDesign() {
+            if (selectedElement === 'image') {
+                designImage = null;
+                document.getElementById('empty-state').style.display = 'block';
+                document.getElementById('tools-panel').classList.add('hidden');
+            } else if (selectedElement && selectedElement.startsWith('text-')) {
+                const index = parseInt(selectedElement.split('-')[1]);
+                textElements.splice(index, 1);
+            }
+            selectedElement = null;
+            updatePrice();
+            draw();
+            showToast('Elemento eliminado');
+        }
+
+        function resetDesign() {
+            if (designImage) {
+                designState = {
+                    x: canvasWidth / 2,
+                    y: canvasHeight / 2,
+                    scale: Math.min(canvasWidth, canvasHeight) * 0.4 / Math.max(designImage.width, designImage.height),
+                    rotation: 0,
+                    opacity: 1,
+                    flipH: false,
+                    flipV: false
+                };
+                document.getElementById('scale-slider').value = 100;
+                document.getElementById('rotate-slider').value = 0;
+                document.getElementById('opacity-slider').value = 100;
+                document.getElementById('scale-value').textContent = '100%';
+                document.getElementById('rotate-value').textContent = '0°';
+                document.getElementById('opacity-value').textContent = '100%';
+                updatePrice();
+                draw();
+                showToast('Diseño restablecido');
+            }
+        }
+
+        // ===== TEXT TOOL =====
+        function addText() {
+            const content = document.getElementById('text-input').value;
+            if (!content.trim()) {
+                showToast('Escribe algo primero');
+                return;
+            }
+            
+            const color = document.getElementById('text-color').value;
+            const font = document.getElementById('text-font').value;
+            
+            textElements.push({
+                content: content,
+                x: canvasWidth / 2,
+                y: canvasHeight / 2,
+                size: 40,
+                color: color,
+                font: font,
+                rotation: 0,
+                opacity: 1
+            });
+            
+            document.getElementById('text-input').value = '';
+            selectedElement = `text-${textElements.length - 1}`;
+            updatePrice();
+            draw();
+            showToast('Texto añadido');
+        }
+
+        // ===== MOUSE INTERACTION =====
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvasWidth / rect.width);
+            const y = (e.clientY - rect.top) * (canvasHeight / rect.height);
+            
+            // Check if clicking on design
+            if (designImage) {
+                const dx = x - designState.x;
+                const dy = y - designState.y;
+                const dist = Math.sqrt(dx*dx + dy*dy);
+                if (dist < 100) {
+                    selectedElement = 'image';
+                    isDragging = true;
+                    dragStart = { x, y };
+                    elementStart = { x: designState.x, y: designState.y };
+                    draw();
+                    return;
+                }
+            }
+            
+            // Check text elements
+            textElements.forEach((text, index) => {
+                const dx = x - text.x;
+                const dy = y - text.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 50) {
+                    selectedElement = `text-${index}`;
+                    isDragging = true;
+                    dragStart = { x, y };
+                    elementStart = { x: text.x, y: text.y };
+                }
+            });
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) * (canvasWidth / rect.width);
+            const y = (e.clientY - rect.top) * (canvasHeight / rect.height);
+            
+            const dx = x - dragStart.x;
+            const dy = y - dragStart.y;
+            
+            if (selectedElement === 'image') {
+                designState.x = elementStart.x + dx;
+                designState.y = elementStart.y + dy;
+            } else if (selectedElement && selectedElement.startsWith('text-')) {
+                const index = parseInt(selectedElement.split('-')[1]);
+                textElements[index].x = elementStart.x + dx;
+                textElements[index].y = elementStart.y + dy;
+            }
+            
+            draw();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+
+        // Touch support
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        // ===== PRODUCT SELECTION =====
+        function selectProduct(product) {
+            currentProduct = product;
+            
+            // Update UI
+            document.querySelectorAll('.product-thumb').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // Update base price
+            const basePrice = productPrices[product];
+            document.getElementById('base-price').textContent = `€${basePrice.toFixed(2)}`;
+            
+            draw();
+            updatePrice();
+            showToast('Prenda cambiada');
+        }
+
+        // ===== POSITION =====
+        function setPosition(position) {
+            document.querySelectorAll('.position-btn').forEach(el => {
+                el.classList.remove('active', 'bg-luxury-gold/20', 'text-luxury-gold', 'border-luxury-gold/30');
+                el.classList.add('bg-luxury-900', 'text-luxury-500', 'border-luxury-700/50');
+            });
+            
+            event.target.classList.remove('bg-luxury-900', 'text-luxury-500', 'border-luxury-700/50');
+            event.target.classList.add('active', 'bg-luxury-gold/20', 'text-luxury-gold', 'border-luxury-gold/30');
+            
+            if (designImage) {
+                const centerX = canvasWidth / 2;
+                const centerY = canvasHeight / 2;
+                
+                switch(position) {
+                    case 'center-chest':
+                        designState.x = centerX;
+                        designState.y = centerY - 20;
+                        break;
+                    case 'left-chest':
+                        designState.x = centerX - 60;
+                        designState.y = centerY - 60;
+                        break;
+                    case 'full-back':
+                        designState.x = centerX;
+                        designState.y = centerY + 10;
+                        designState.scale *= 1.3;
+                        break;
+                    case 'sleeve':
+                        designState.x = centerX + 100;
+                        designState.y = centerY - 40;
+                        designState.scale *= 0.6;
+                        break;
+                }
+                draw();
+            }
+        }
+
+        // ===== ZOOM & GRID =====
+        function toggleGrid() {
+            const grid = document.getElementById('grid-overlay');
+            grid.style.opacity = grid.style.opacity === '1' ? '0' : '1';
+        }
+
+        function zoomIn() {
+            zoom = Math.min(zoom * 1.2, 3);
+            applyZoom();
+        }
+
+        function zoomOut() {
+            zoom = Math.max(zoom / 1.2, 0.5);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            zoom = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            canvas.style.transform = `scale(${zoom})`;
+        }
+
+        // ===== PRICE CALCULATION =====
+        function updatePrice() {
+            const basePrice = productPrices[currentProduct];
+            let transferPrice = 0;
+            
+            if (designImage) {
+                // Calculate area in cm (assuming canvas represents ~40cm)
+                const scale = designState.scale;
+                const area = (designImage.width * scale * designImage.height * scale) / 100; // rough cm²
+                transferPrice = Math.max(8, area * 0.15); // min €8, €0.15 per cm²
+            }
+            
+            const customizationFee = (designImage || textElements.length > 0) ? 5 : 0;
+            const total = basePrice + transferPrice + customizationFee;
+            
+            document.getElementById('transfer-price').textContent = `€${transferPrice.toFixed(2)}`;
+            document.getElementById('total-price').textContent = `€${total.toFixed(2)}`;
+            document.getElementById('price-display').textContent = transferPrice.toFixed(2);
+            
+            // Update size display
+            if (designImage) {
+                const widthCm = (designImage.width * designState.scale / 50).toFixed(1);
+                const heightCm = (designImage.height * designState.scale / 50).toFixed(1);
+                document.getElementById('size-display').textContent = `${widthCm} x ${heightCm} cm`;
+            }
+        }
+
+        // ===== AI MODAL =====
+        function openAIModal() {
+            document.getElementById('ai-modal').classList.add('active');
+        }
+
+        function closeAIModal() {
+            document.getElementById('ai-modal').classList.remove('active');
+        }
+
+        function setPrompt(text) {
+            document.getElementById('ai-prompt-text').value = text;
+        }
+
+        async function generateAI() {
+            const prompt = document.getElementById('ai-prompt-text').value;
+            if (!prompt.trim()) {
+                showToast('Describe tu diseño primero');
+                return;
+            }
+            
+            const btn = document.getElementById('ai-generate-btn');
+            const loading = document.getElementById('ai-loading');
+            
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            loading.classList.remove('hidden');
+            
+            // Simulate AI generation (replace with real API call)
+            setTimeout(() => {
+                // Create a placeholder design
+                const canvas2 = document.createElement('canvas');
+                canvas2.width = 512;
+                canvas2.height = 512;
+                const ctx2 = canvas2.getContext('2d');
+                
+                // Generate abstract design based on prompt
+                ctx2.fillStyle = '#1a1a1a';
+                ctx2.fillRect(0, 0, 512, 512);
+                
+                // Add some "AI-generated" looking shapes
+                for (let i = 0; i < 20; i++) {
+                    ctx2.beginPath();
+                    ctx2.arc(
+                        Math.random() * 512,
+                        Math.random() * 512,
+                        Math.random() * 100 + 20,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx2.fillStyle = `hsla(${Math.random() * 60 + 30}, 70%, ${Math.random() * 30 + 40}%, 0.6)`;
+                    ctx2.fill();
+                }
+                
+                // Add text
+                ctx2.font = 'bold 30px Playfair Display';
+                ctx2.fillStyle = '#c9a96e';
+                ctx2.textAlign = 'center';
+                ctx2.fillText('AI GENERATED', 256, 256);
+                ctx2.font = '16px Inter';
+                ctx2.fillStyle = '#f5f0e8';
+                ctx2.fillText(prompt.substring(0, 30) + '...', 256, 290);
+                
+                // Load as design
+                designImage = new Image();
+                designImage.onload = () => {
+                    const maxSize = Math.min(canvasWidth, canvasHeight) * 0.4;
+                    const scale = Math.min(maxSize / designImage.width, maxSize / designImage.height);
+                    designState = {
+                        x: canvasWidth / 2,
+                        y: canvasHeight / 2,
+                        scale: scale,
+                        rotation: 0,
+                        opacity: 1,
+                        flipH: false,
+                        flipV: false
+                    };
+                    
+                    document.getElementById('empty-state').style.display = 'none';
+                    document.getElementById('tools-panel').classList.remove('hidden');
+                    selectedElement = 'image';
+                    updatePrice();
+                    draw();
+                    
+                    closeAIModal();
+                    showToast('Diseño AI generado');
+                };
+                designImage.src = canvas2.toDataURL();
+                
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                loading.classList.add('hidden');
+            }, 3000);
+        }
+
+        // ===== ORDER MODAL =====
+        function openOrderModal() {
+            if (!designImage && textElements.length === 0) {
+                showToast('Crea un diseño primero');
+                return;
+            }
+            
+            document.getElementById('order-product').textContent = 
+                currentProduct === 'tshirt-black' ? 'Camiseta Negra' :
+                currentProduct === 'tshirt-white' ? 'Camiseta Blanca' :
+                currentProduct === 'hoodie-black' ? 'Hoodie Negro' : 'Gorra Snapback';
+            
+            document.getElementById('order-size').textContent = document.getElementById('size-display').textContent;
+            document.getElementById('order-price').textContent = document.getElementById('total-price').textContent;
+            
+            // Generate thumbnail
+            const thumbCanvas = document.createElement('canvas');
+            thumbCanvas.width = 200;
+            thumbCanvas.height = 200;
+            const thumbCtx = thumbCanvas.getContext('2d');
+            thumbCtx.drawImage(canvas, 0, 0, 200, 200);
+            document.getElementById('preview-thumbnail').innerHTML = `<img src="${thumbCanvas.toDataURL()}" class="w-full h-full object-cover rounded-lg">`;
+            
+            document.getElementById('order-modal').classList.add('active');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').classList.remove('active');
+        }
+
+        // ===== FORM SUBMIT =====
+        document.getElementById('order-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const name = e.target.querySelector('input[type="text"]').value;
+            const email = e.target.querySelector('input[type="email"]').value;
+            const phone = e.target.querySelector('input[type="tel"]').value;
+            const quantity = e.target.querySelector('select').value;
+            const notes = e.target.querySelector('textarea').value;
+            
+            const message = `*Nuevo Pedido Jovafam*%0A%0A` +
+                `*Producto:* ${document.getElementById('order-product').textContent}%0A` +
+                `*Tamaño:* ${document.getElementById('order-size').textContent}%0A` +
+                `*Precio:* ${document.getElementById('order-price').textContent}%0A` +
+                `*Cantidad:* ${quantity}%0A%0A` +
+                `*Cliente:* ${name}%0A` +
+                `*Email:* ${email}%0A` +
+                `*Teléfono:* ${phone}%0A` +
+                `*Notas:* ${notes || 'Ninguna'}`;
+            
+            // Open WhatsApp (replace with your number)
+            window.open(`https://wa.me/1234567890?text=${message}`, '_blank');
+            
+            closeOrderModal();
+            showToast('Pedido enviado por WhatsApp');
+        });
+
+        // ===== DOWNLOAD =====
+        function downloadPreview() {
+            if (!designImage && textElements.length === 0) {
+                showToast('No hay diseño para descargar');
+                return;
+            }
+            
+            const link = document.createElement('a');
+            link.download = 'jovafam-design.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            showToast('Vista previa descargada');
+        }
+
+        // ===== TOAST =====
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // ===== INIT =====
+        window.addEventListener('load', () => {
+            resizeCanvas();
+            
+            // Fade in animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+        });
+
+        // Close modals on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAIModal();
+                closeOrderModal();
+            }
+        });
+    </script>
+</body>
+</html>
